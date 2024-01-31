@@ -15,6 +15,7 @@ namespace ImagePanel
         Panel _parentPanel;
         Panel _pictureFramePanel;
         int scrollBarWidth = 25;
+
         private PictureBox pictureBox1;
         private VScrollBar vScrollBar1;
         private HScrollBar hScrollBar1;
@@ -22,8 +23,7 @@ namespace ImagePanel
         Bitmap bitmap_source;
         Bitmap bitmap_show;
 
-        List<System.Drawing.Point> points;
-
+        List<System.Drawing.Point> pointList;
 
         Point MouseLocation_MouseDown;
         Point MouseLocation_Now;
@@ -84,7 +84,7 @@ namespace ImagePanel
             this._pictureFramePanel.SuspendLayout();
             this._parentPanel.SuspendLayout();
 
-            points = new List<Point>();
+            pointList = new List<Point>();
 
             // 
             // _pictureFramePanel_Panel
@@ -161,29 +161,6 @@ namespace ImagePanel
             getMouseReport();
         }
 
-        private void setImageSourceFocusPointFromViewCenter()
-        {
-            if (this.pictureBox1.Image != null)
-            {
-                int Factor = (int)(factor * 100);
-                imageSourceFocusPoint.X = ((-this.pictureBox1.Left + this._pictureFramePanel.Width / 2) * 100) / Factor;
-                imageSourceFocusPoint.Y = ((-this.pictureBox1.Top + this._pictureFramePanel.Height / 2) * 100) / Factor;
-            }
-
-            getMouseReport();
-
-        }
-
-        private void setImageSourceFocusPointFromImageCenter()
-        {
-            if (this.pictureBox1.Image != null)
-            {
-                imageSourceFocusPoint.X = this.pictureBox1.Image.Width / 2;
-                imageSourceFocusPoint.Y = this.pictureBox1.Image.Height / 2;
-            }
-            getMouseReport();
-        }
-
         private void setPanelFocusPointFromImagePoint(Point pictureBoxPoint)
         {
 
@@ -200,12 +177,6 @@ namespace ImagePanel
         }
 
 
-        private void setPanelFocusPointOnCenter()
-        {
-            panelFocusPoint.X = this._pictureFramePanel.Width / 2;
-            panelFocusPoint.Y = this._pictureFramePanel.Height / 2;
-            getMouseReport();
-        }
         private string getMouseReport()
         {
             string report = imageSourceFocusPoint.ToString() + " " +
@@ -258,15 +229,85 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Left) MouseLeftDown = true;
             if (e.Button == MouseButtons.Middle) MouseMiddleDown = true;
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
-            
-            if (MouseOnImage && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+
+            if (MouseOnImage && (Control.ModifierKeys & Keys.Alt) == Keys.Alt)
             {
                 pictureBox1.Top = (int)((-imageSourceFocusPoint.Y) * factor) + _parentPanel.Height / 2;
                 pictureBox1.Left = (int)((-imageSourceFocusPoint.X) * factor) + _parentPanel.Width / 2;
 
             }
 
+            if (MouseOnImage && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                if (!listPointHaveNear(pointList, imageSourceFocusPoint, drawPointDiameter / 2))
+                {
+                    pointList.Add(imageSourceFocusPoint);
+                    drawShowBitmap();
+                    pictureBox1.Refresh();
+
+                }
+                else
+                {
+                    pointListElement_MoveTarget = getNearPointFromlist(pointList, imageSourceFocusPoint, drawPointDiameter / 2);
+                }
+            }
+
             getMouseReport();
+        }
+
+
+        int pointListElement_MoveTarget = int.MaxValue;
+
+
+        bool listPointHaveNear(List<Point> points, Point targetPoint, double distance)
+        {
+            var result = points.Where(x => Math.Sqrt(Math.Pow(x.X - targetPoint.X, 2) + Math.Pow(x.Y - targetPoint.Y, 2)) <= distance).ToList();
+            if (result.Count > 0) return true;
+            return false;
+        }
+
+        int getNearPointFromlist(List<Point> points, Point targetPoint, double distance)
+        {
+            var result = points.Where(x => Math.Sqrt(Math.Pow(x.X - targetPoint.X, 2) + Math.Pow(x.Y - targetPoint.Y, 2)) <= distance).ToList();
+
+            for (int listIndex = 0; listIndex < points.Count; listIndex++)
+            {
+                var p = points[listIndex];
+                if (p.X == result[0].X && p.Y == result[0].Y) return listIndex;
+
+            }
+
+            return int.MaxValue;
+
+        }
+
+
+        public float drawPointDiameter = 16;
+
+        void drawShowBitmap()
+        {
+
+            Graphics g = Graphics.FromImage(bitmap_show);
+
+            g.DrawImage(bitmap_source, 0, 0);
+
+            for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
+            {
+                g.DrawEllipse(Pens.Red, pointList[pointIndex].X - drawPointDiameter / 2, pointList[pointIndex].Y - drawPointDiameter / 2, drawPointDiameter, drawPointDiameter);
+            }
+
+            for (int pointIndex = 0; pointIndex < pointList.Count - 1; pointIndex++)
+            {
+                g.DrawLine(Pens.Red, pointList[pointIndex], pointList[pointIndex + 1]);
+            }
+
+            if (pointList.Count > 2)
+            {
+                g.DrawLine(Pens.Red, pointList[0], pointList[pointList.Count - 1]);
+
+            }
+            g.Dispose();
+
         }
 
         private void _pictureFramePanel_MouseUp(object sender, MouseEventArgs e)
@@ -277,7 +318,7 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Right) MouseRightDown = false;
 
             getMouseReport();
-
+            pointListElement_MoveTarget = int.MaxValue;
         }
 
         private void _pictureFramePanel_MouseEnter(object sender, EventArgs e)
@@ -289,9 +330,6 @@ namespace ImagePanel
         private void _pictureFramePanel_MouseLeave(object sender, EventArgs e)
         {
             MouseOnImage = false;
-            setPanelFocusPointOnCenter();
-            setImageSourceFocusPointFromViewCenter();
-
             getMouseReport();
         }
 
@@ -324,6 +362,19 @@ namespace ImagePanel
                     hScrollBar1_Scroll(null, null);
 
                 }
+                if (MouseLeftDown && pointListElement_MoveTarget != int.MaxValue)
+                {
+
+                    int listIndex = pointListElement_MoveTarget;
+
+                    if (pointList[listIndex] != imageSourceFocusPoint)
+                    {
+                        pointList[listIndex] = new Point(imageSourceFocusPoint.X, imageSourceFocusPoint.Y);
+                    }
+
+                    drawShowBitmap();
+                    pictureBox1.Refresh();
+                }
 
                 getMouseReport();
             }
@@ -338,7 +389,7 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
 
 
-                getMouseReport();
+            getMouseReport();
         }
 
         private void _pictureFramePanel_Panel_MouseUp(object sender, MouseEventArgs e)
@@ -349,6 +400,8 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Right) MouseRightDown = false;
 
             getMouseReport();
+
+            pointListElement_MoveTarget = int.MaxValue;
 
         }
 
@@ -361,9 +414,6 @@ namespace ImagePanel
         private void _pictureFramePanel_Panel_MouseLeave(object sender, EventArgs e)
         {
             MouseOnImage = false;
-            setPanelFocusPointOnCenter();
-            setImageSourceFocusPointFromViewCenter();
-
             getMouseReport();
         }
 
@@ -422,7 +472,6 @@ namespace ImagePanel
             }
 
         }
-
 
         private void vScrollBar1_Scroll(object sender, ScrollEventArgs e)
         {
