@@ -33,6 +33,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.button_CreateTestImage = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // panel1
@@ -80,14 +81,25 @@
             this.label3.TabIndex = 3;
             this.label3.Text = "Drag Center Button :  move picture";
             // 
+            // button_CreateTestImage
+            // 
+            this.button_CreateTestImage.Location = new System.Drawing.Point(661, 12);
+            this.button_CreateTestImage.Name = "button_CreateTestImage";
+            this.button_CreateTestImage.Size = new System.Drawing.Size(163, 35);
+            this.button_CreateTestImage.TabIndex = 1;
+            this.button_CreateTestImage.Text = "CreateTestImage";
+            this.button_CreateTestImage.UseVisualStyleBackColor = true;
+            this.button_CreateTestImage.Click += new System.EventHandler(this.button_CreateTestImage_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(407, 543);
+            this.ClientSize = new System.Drawing.Size(846, 543);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
+            this.Controls.Add(this.button_CreateTestImage);
             this.Controls.Add(this.button_LoadImage);
             this.Controls.Add(this.panel1);
             this.Name = "Form1";
@@ -105,6 +117,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Button button_CreateTestImage;
     }
 }
 

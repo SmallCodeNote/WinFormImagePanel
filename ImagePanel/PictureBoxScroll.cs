@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using System.Diagnostics;
+
 namespace ImagePanel
 {
     class PictureBoxScroll
@@ -35,7 +37,7 @@ namespace ImagePanel
         /// <summary>
         /// image expanding focus point on image coordinate
         /// </summary>
-        Point imageFocusPoint;
+        Point imageSourceFocusPoint;
 
         /// <summary>
         /// image expanding focus point on panel coordinate
@@ -94,6 +96,8 @@ namespace ImagePanel
             this._pictureFramePanel.TabIndex = 0;
             this._pictureFramePanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_Panel_MouseDown);
             this._pictureFramePanel.MouseUp += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_Panel_MouseUp);
+            this._pictureFramePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseMove);
+
             // 
             // pictureBox1
             // 
@@ -102,13 +106,15 @@ namespace ImagePanel
             this.pictureBox1.Size = new System.Drawing.Size(_parentPanel.Width - scrollBarWidth, _parentPanel.Height - scrollBarWidth);
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
+            this.pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
 
-            this.pictureBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseDown);
             this.pictureBox1.MouseEnter += new System.EventHandler(this._pictureFramePanel_MouseEnter);
             this.pictureBox1.MouseLeave += new System.EventHandler(this._pictureFramePanel_MouseLeave);
-            this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseMove);
+            this.pictureBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseDown);
             this.pictureBox1.MouseUp += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseUp);
+            this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this._pictureFramePanel_MouseMove);
             this.pictureBox1.MouseWheel += new System.Windows.Forms.MouseEventHandler(_pictureFramePanel_MouseWheel);
+
 
             // 
             // vScrollBar1
@@ -134,8 +140,6 @@ namespace ImagePanel
             this._parentPanel.Controls.Add(this._pictureFramePanel);
             this._parentPanel.Controls.Add(this.hScrollBar1);
             this._parentPanel.Controls.Add(this.vScrollBar1);
-            //this._pictureFramePanel.Name = "Form1";
-            //this._pictureFramePanel.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
 
             this._pictureFramePanel.ResumeLayout(false);
@@ -148,46 +152,49 @@ namespace ImagePanel
         /// </summary>
         /// <param name="X">pictureBox coordinate</param>
         /// <param name="Y">pictureBox coordinate</param>
-        private void setImageFocusPoint(int X, int Y)
+        private void setImageSourceFocusPoint(Point pictureBoxPoint)
         {
-            int Factor = (int)(factor * 100);
+            imageSourceFocusPoint.X = (int)(pictureBoxPoint.X / factor);
+            imageSourceFocusPoint.Y = (int)(pictureBoxPoint.Y / factor);
 
-            imageFocusPoint.X = (X * 100) / Factor;
-            imageFocusPoint.Y = (Y * 100) / Factor;
-
+            Debug.WriteLine("im " + imageSourceFocusPoint.ToString());
             getMouseReport();
         }
 
-        private void setImageFocusPointFromViewCenter()
+        private void setImageSourceFocusPointFromViewCenter()
         {
             if (this.pictureBox1.Image != null)
             {
                 int Factor = (int)(factor * 100);
-                imageFocusPoint.X = ((-this.pictureBox1.Left + this._pictureFramePanel.Width / 2) * 100) / Factor;
-                imageFocusPoint.Y = ((-this.pictureBox1.Top + this._pictureFramePanel.Height / 2) * 100) / Factor;
+                imageSourceFocusPoint.X = ((-this.pictureBox1.Left + this._pictureFramePanel.Width / 2) * 100) / Factor;
+                imageSourceFocusPoint.Y = ((-this.pictureBox1.Top + this._pictureFramePanel.Height / 2) * 100) / Factor;
             }
 
             getMouseReport();
 
         }
 
-        private void setImageFocusPointFromImageCenter()
+        private void setImageSourceFocusPointFromImageCenter()
         {
             if (this.pictureBox1.Image != null)
             {
-                imageFocusPoint.X = this.pictureBox1.Image.Width / 2;
-                imageFocusPoint.Y = this.pictureBox1.Image.Height / 2;
+                imageSourceFocusPoint.X = this.pictureBox1.Image.Width / 2;
+                imageSourceFocusPoint.Y = this.pictureBox1.Image.Height / 2;
             }
             getMouseReport();
         }
 
-        private void setPanelFocusPointFromImagePoint(int X, int Y)
+        private void setPanelFocusPointFromImagePoint(Point pictureBoxPoint)
         {
+
             if (this.pictureBox1.Image != null)
             {
-                panelFocusPoint.X = X + this.pictureBox1.Location.X;
-                panelFocusPoint.Y = Y + this.pictureBox1.Location.Y;
+                panelFocusPoint.X = pictureBoxPoint.X + this.pictureBox1.Location.X;
+                panelFocusPoint.Y = pictureBoxPoint.Y + this.pictureBox1.Location.Y;
             }
+
+            Debug.WriteLine("pp " + panelFocusPoint.ToString());
+
 
             getMouseReport();
         }
@@ -201,7 +208,7 @@ namespace ImagePanel
         }
         private string getMouseReport()
         {
-            string report = imageFocusPoint.ToString() + " " +
+            string report = imageSourceFocusPoint.ToString() + " " +
                 //MouseLocation_Now.ToString() + " " +
                 panelFocusPoint.ToString() + " " +
                 (MouseLeftDown ? 1 : 0).ToString() + " " +
@@ -220,14 +227,14 @@ namespace ImagePanel
             if (this.pictureBox1.Image.Width > this._pictureFramePanel.Width)
             {
                 this.hScrollBar1.Enabled = true;
-                this.hScrollBar1.Maximum = this.pictureBox1.Image.Width;
+                this.hScrollBar1.Maximum = this.pictureBox1.Width;
                 this.hScrollBar1.LargeChange = this._pictureFramePanel.Width;
             }
 
             if (this.pictureBox1.Image.Height > this._pictureFramePanel.Height)
             {
                 this.vScrollBar1.Enabled = true;
-                this.vScrollBar1.Maximum = this.pictureBox1.Image.Height;
+                this.vScrollBar1.Maximum = this.pictureBox1.Height;
                 this.vScrollBar1.LargeChange = this._pictureFramePanel.Height;
             }
 
@@ -251,6 +258,13 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Left) MouseLeftDown = true;
             if (e.Button == MouseButtons.Middle) MouseMiddleDown = true;
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
+            
+            if (MouseOnImage && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                pictureBox1.Top = (int)((-imageSourceFocusPoint.Y) * factor) + _parentPanel.Height / 2;
+                pictureBox1.Left = (int)((-imageSourceFocusPoint.X) * factor) + _parentPanel.Width / 2;
+
+            }
 
             getMouseReport();
         }
@@ -276,7 +290,7 @@ namespace ImagePanel
         {
             MouseOnImage = false;
             setPanelFocusPointOnCenter();
-            setImageFocusPointFromViewCenter();
+            setImageSourceFocusPointFromViewCenter();
 
             getMouseReport();
         }
@@ -284,34 +298,35 @@ namespace ImagePanel
         private void _pictureFramePanel_MouseMove(object sender, MouseEventArgs e)
         {
             MouseLocation_Now = e.Location;
+            setPanelFocusPointFromImagePoint(e.Location);
+            setImageSourceFocusPoint(e.Location);
 
-            if (MouseOnImage) setPanelFocusPointFromImagePoint(e.X, e.Y);
-            if (MouseOnImage) setImageFocusPoint(e.X, e.Y);
-
-            if (MouseMiddleDown)
+            if (MouseOnImage)
             {
-                Point pb = this.pictureBox1.Location;
-                int newTop = -(pb.Y + (MouseLocation_Now.Y - MouseLocation_MouseDown.Y));
-                int newLeft = -(pb.X + (MouseLocation_Now.X - MouseLocation_MouseDown.X));
+                if (MouseMiddleDown)
+                {
+                    Point pb = this.pictureBox1.Location;
+                    int newTop = -(pb.Y + (MouseLocation_Now.Y - MouseLocation_MouseDown.Y));
+                    int newLeft = -(pb.X + (MouseLocation_Now.X - MouseLocation_MouseDown.X));
 
 
-                if (newTop > vScrollBar1.Maximum - vScrollBar1.LargeChange) { newTop = vScrollBar1.Maximum - vScrollBar1.LargeChange; }
-                if (newTop < vScrollBar1.Minimum) { newTop = vScrollBar1.Minimum; }
+                    if (newTop > vScrollBar1.Maximum - vScrollBar1.LargeChange) { newTop = vScrollBar1.Maximum - vScrollBar1.LargeChange; }
+                    if (newTop < vScrollBar1.Minimum) { newTop = vScrollBar1.Minimum; }
 
-                vScrollBar1.Value = newTop;
-                vScrollBar1_Scroll(null, null);
+                    vScrollBar1.Value = newTop;
+                    vScrollBar1_Scroll(null, null);
 
 
-                if (newLeft > hScrollBar1.Maximum - hScrollBar1.LargeChange) { newLeft = hScrollBar1.Maximum - hScrollBar1.LargeChange; }
-                if (newLeft < hScrollBar1.Minimum) { newLeft = hScrollBar1.Minimum; }
+                    if (newLeft > hScrollBar1.Maximum - hScrollBar1.LargeChange) { newLeft = hScrollBar1.Maximum - hScrollBar1.LargeChange; }
+                    if (newLeft < hScrollBar1.Minimum) { newLeft = hScrollBar1.Minimum; }
 
-                hScrollBar1.Value = newLeft;
-                hScrollBar1_Scroll(null, null);
+                    hScrollBar1.Value = newLeft;
+                    hScrollBar1_Scroll(null, null);
 
+                }
+
+                getMouseReport();
             }
-
-            getMouseReport();
-
         }
 
 
@@ -322,7 +337,8 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Middle) MouseMiddleDown = true;
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
 
-            getMouseReport();
+
+                getMouseReport();
         }
 
         private void _pictureFramePanel_Panel_MouseUp(object sender, MouseEventArgs e)
@@ -346,63 +362,65 @@ namespace ImagePanel
         {
             MouseOnImage = false;
             setPanelFocusPointOnCenter();
-            setImageFocusPointFromViewCenter();
+            setImageSourceFocusPointFromViewCenter();
 
             getMouseReport();
-        }
-
-        private void _pictureFramePanel_Panel_MouseMove(object sender, MouseEventArgs e)
-        {
-            MouseLocation_Now = e.Location;
-
-            if (MouseOnImage) setPanelFocusPointFromImagePoint(e.X, e.Y);
-            if (MouseOnImage) setImageFocusPoint(e.X, e.Y);
-
-            if (MouseMiddleDown)
-            {
-                Point pb = this.pictureBox1.Location;
-                int newLeft = pb.X + MouseLocation_Now.X - MouseLocation_MouseDown.X;
-                int newTop = pb.Y + MouseLocation_Now.Y - MouseLocation_MouseDown.Y;
-
-                //if (-newTop >= vScrollBar1.Minimum && -newTop <= vScrollBar1.Maximum - this._pictureFramePanel_Panel.Height)
-                {
-                    this.pictureBox1.Top = newTop;
-                }
-                //if (-newLeft >= hScrollBar1.Minimum && -newLeft <= hScrollBar1.Maximum - this._pictureFramePanel_Panel.Width)
-                {
-                    this.pictureBox1.Left = newLeft;
-                }
-
-                updateScrollBarPosition();
-
-            }
-
-            getMouseReport();
-
         }
 
         private void _pictureFramePanel_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (MouseOnImage && !MouseRightDown)
+            if (MouseOnImage && (Control.ModifierKeys & Keys.Control) == Keys.Control)
             {
-                int nextValue = vScrollBar1.Value - e.Delta;
+                double factorStep = 1200.0;
+                if (factor > 2) { factorStep = 300; };
+
+                double nextFactor = factor + e.Delta / factorStep;
+                if (nextFactor < 0.1) { nextFactor = 0.1; }
+                if (nextFactor > 10) { nextFactor = 10.0; }
+
+                double deltaFactor = nextFactor - factor;
+                factor = nextFactor;
+
+                Debug.WriteLine("factor = " + factor.ToString());
+
+                pictureBox1.Width = (int)(bitmap_source.Width * factor);
+                pictureBox1.Height = (int)(bitmap_source.Height * factor);
+
+                pictureBox1.Top = (int)((-imageSourceFocusPoint.Y) * factor) + panelFocusPoint.Y;
+                pictureBox1.Left = (int)((-imageSourceFocusPoint.X) * factor) + panelFocusPoint.X;
+
+                updateScrollBarParam();
+
+            }
+            else if (MouseOnImage && !MouseRightDown)
+            {
+                int deltaStep = vScrollBar1.LargeChange / 2;
+                if (e.Delta < 0) { deltaStep *= -1; }
+
+                int nextValue = vScrollBar1.Value - deltaStep;
 
                 if (nextValue > vScrollBar1.Maximum - vScrollBar1.LargeChange) { nextValue = vScrollBar1.Maximum - vScrollBar1.LargeChange; }
                 if (nextValue < vScrollBar1.Minimum) { nextValue = vScrollBar1.Minimum; }
 
                 vScrollBar1.Value = nextValue;
                 vScrollBar1_Scroll(null, null);
+
             }
             else if (MouseOnImage && MouseRightDown)
             {
-                int nextValue = hScrollBar1.Value - e.Delta;
+                int deltaStep = hScrollBar1.LargeChange / 2;
+                if (e.Delta < 0) { deltaStep *= -1; }
+
+                int nextValue = hScrollBar1.Value - deltaStep;
 
                 if (nextValue > hScrollBar1.Maximum - hScrollBar1.LargeChange) { nextValue = hScrollBar1.Maximum - hScrollBar1.LargeChange; }
                 if (nextValue < hScrollBar1.Minimum) { nextValue = hScrollBar1.Minimum; }
 
                 hScrollBar1.Value = nextValue;
                 hScrollBar1_Scroll(null, null);
+
             }
+
         }
 
 
