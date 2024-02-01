@@ -230,25 +230,37 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Middle) MouseMiddleDown = true;
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
 
-            if (MouseOnImage && (Control.ModifierKeys & Keys.Alt) == Keys.Alt)
+            if (MouseOnImage && MouseLeftDown && (Control.ModifierKeys & Keys.Alt) == Keys.Alt)
             {
                 pictureBox1.Top = (int)((-imageSourceFocusPoint.Y) * factor) + _parentPanel.Height / 2;
                 pictureBox1.Left = (int)((-imageSourceFocusPoint.X) * factor) + _parentPanel.Width / 2;
 
             }
 
-            if (MouseOnImage && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+            if (MouseOnImage && MouseLeftDown && (Control.ModifierKeys & Keys.Control) == Keys.Control)
             {
                 if (!listPointHaveNear(pointList, imageSourceFocusPoint, drawPointDiameter / 2))
                 {
                     pointList.Add(imageSourceFocusPoint);
                     drawShowBitmap();
                     pictureBox1.Refresh();
-
                 }
                 else
                 {
                     pointListElement_MoveTarget = getNearPointFromlist(pointList, imageSourceFocusPoint, drawPointDiameter / 2);
+                }
+            }
+
+            if (MouseOnImage && MouseRightDown && (Control.ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                if (listPointHaveNear(pointList, imageSourceFocusPoint, drawPointDiameter / 2))
+                {
+                    int pointListElement_RemoveTarget = getNearPointFromlist(pointList, imageSourceFocusPoint, drawPointDiameter / 2);
+
+                    pointList.RemoveAt(pointListElement_RemoveTarget);
+                    drawShowBitmap();
+                    pictureBox1.Refresh();
+
                 }
             }
 
