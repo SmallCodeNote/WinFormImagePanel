@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -282,6 +283,14 @@ namespace ImagePanel
                     this.contextMenu.Show(pictureBox1, new Point(e.X, e.Y));
 
                 }
+                else
+                {
+                    MouseRightDown = false;
+                    this.contextMenu.MenuItems.Clear();
+                    this.contextMenu.MenuItems.Add(new MenuItem("GetListFromClipboard", new EventHandler(this.MenuItem_GetListFromClipboard_Click)));
+                    this.contextMenu.Show(pictureBox1, new Point(e.X, e.Y));
+
+                }
 
             };
 
@@ -300,6 +309,15 @@ namespace ImagePanel
             Clipboard.SetText(sb.ToString()+"\r\n");
 
         }
+
+        private void MenuItem_GetListFromClipboard_Click(object sender, EventArgs e)
+        {
+
+            string PointsString =  Clipboard.GetText();
+            getListFromString(PointsString);
+
+        }
+
         private void MenuItem_ClearPointList_Click(object sender, EventArgs e)
         {
             pointList.Clear();
@@ -537,6 +555,23 @@ namespace ImagePanel
         {
             drawShowBitmap();
             pictureBox1.Refresh();
+        }
+
+        public void getListFromString(string PointsString)
+        {
+            MatchCollection matches = Regex.Matches(PointsString, @"\{X=(\d+),Y=(\d+)\}");
+            pointList.Clear();
+
+
+            foreach (Match match in matches)
+            {
+                int x = int.Parse(match.Groups[1].Value);
+                int y = int.Parse(match.Groups[2].Value);
+                pointList.Add(new Point(x, y));
+            }
+
+            Refresh();
+
         }
 
     }
