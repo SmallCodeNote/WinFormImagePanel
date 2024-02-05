@@ -20,6 +20,9 @@ namespace ImagePanel
         private VScrollBar vScrollBar1;
         private HScrollBar hScrollBar1;
 
+        private ContextMenu contextMenu;
+
+
         Bitmap bitmap_source;
         Bitmap bitmap_show;
 
@@ -144,6 +147,12 @@ namespace ImagePanel
 
             this._pictureFramePanel.ResumeLayout(false);
             this._parentPanel.ResumeLayout(false);
+
+            // 
+            // ContextMenu
+            //
+            this.contextMenu = new ContextMenu();
+
         }
 
 
@@ -242,8 +251,7 @@ namespace ImagePanel
                 if (!listPointHaveNear(pointList, imageSourceFocusPoint, drawPointDiameter / 2))
                 {
                     pointList.Add(imageSourceFocusPoint);
-                    drawShowBitmap();
-                    pictureBox1.Refresh();
+                    Refresh();
                 }
                 else
                 {
@@ -258,13 +266,44 @@ namespace ImagePanel
                     int pointListElement_RemoveTarget = getNearPointFromlist(pointList, imageSourceFocusPoint, drawPointDiameter / 2);
 
                     pointList.RemoveAt(pointListElement_RemoveTarget);
-                    drawShowBitmap();
-                    pictureBox1.Refresh();
+                    Refresh();
 
                 }
             }
+            else if (MouseOnImage && MouseRightDown)
+            {
+
+                if (listPointHaveNear(pointList, imageSourceFocusPoint, drawPointDiameter / 2))
+                {
+                    MouseRightDown = false;
+                    this.contextMenu.MenuItems.Clear();
+                    this.contextMenu.MenuItems.Add(new MenuItem("SendListSetToClipboard", new EventHandler(this.MenuItem_SendListSetToClipboard_Click)));
+                    this.contextMenu.MenuItems.Add(new MenuItem("ClearPointList", new EventHandler(this.MenuItem_ClearPointList_Click)));
+                    this.contextMenu.Show(pictureBox1, new Point(e.X, e.Y));
+
+                }
+
+            };
 
             getMouseReport();
+        }
+
+        private void MenuItem_SendListSetToClipboard_Click(object sender, EventArgs e)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var point in pointList)
+            {
+                sb.Append(point.ToString());
+            }
+
+            Clipboard.SetText(sb.ToString()+"\r\n");
+
+        }
+        private void MenuItem_ClearPointList_Click(object sender, EventArgs e)
+        {
+            pointList.Clear();
+            Refresh();
         }
 
 
@@ -384,8 +423,8 @@ namespace ImagePanel
                         pointList[listIndex] = new Point(imageSourceFocusPoint.X, imageSourceFocusPoint.Y);
                     }
 
-                    drawShowBitmap();
-                    pictureBox1.Refresh();
+                    Refresh();
+
                 }
 
                 getMouseReport();
@@ -399,7 +438,6 @@ namespace ImagePanel
             if (e.Button == MouseButtons.Left) MouseLeftDown = true;
             if (e.Button == MouseButtons.Middle) MouseMiddleDown = true;
             if (e.Button == MouseButtons.Right) MouseRightDown = true;
-
 
             getMouseReport();
         }
@@ -495,6 +533,11 @@ namespace ImagePanel
             this.pictureBox1.Left = -this.hScrollBar1.Value;
         }
 
+        public void Refresh()
+        {
+            drawShowBitmap();
+            pictureBox1.Refresh();
+        }
 
     }
 }
